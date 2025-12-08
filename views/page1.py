@@ -9,11 +9,11 @@ st.set_page_config(
     page_title="Togo Prefecture Population Map",
     page_icon="🗺️",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # App title and description
-st.title("🇹🇬 Togo Prefecture Population Distribution")
+st.title("Togo Prefecture Population Distribution")
 st.markdown("---")
 st.markdown("### Interactive map showing population counts by prefecture")
 st.markdown("*Hover over any prefecture to see its name and population count*")
