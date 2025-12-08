@@ -1,83 +1,293 @@
-import pandas as pd
 import streamlit as st
+from datetime import datetime
 
-from utils import get_cursor, FETCH_LATEST_MEASURES_QUERY
-
-
-def app():
-    if "df_latest_obs" not in st.session_state:
-        with st.spinner(
-            "If the data cluster is cold starting, this may take up to 5 minutes", show_time=True
-        ):
-            with get_cursor() as cursor:
-                cursor.execute(FETCH_LATEST_MEASURES_QUERY)
-                rows = [row.asDict() for row in cursor.fetchall()]
-                st.session_state.df_latest_obs = pd.DataFrame(rows)
-
-    # Filter the dataframe based on site names
-    sites = st.session_state.df_latest_obs["name"].unique()
-    sites = ["All Sites"] + list(sites)
-    selected_sites = st.multiselect(
-        "Select sites to filter by:", sites, default=["All Sites"]
-    )
-    # Filter the dataframe based on the selected measures
-    measures = st.session_state.df_latest_obs["measure"].unique()
-    selected_measures = st.multiselect(
-        "Select measures to filter by:", measures, default=measures
-    )
-    # Filter the dataframe based on the selected measures and sites
-    if "All Sites" in selected_sites:
-        filtered_df = st.session_state.df_latest_obs[
-            st.session_state.df_latest_obs["measure"].isin(selected_measures)
-        ]
-    else:
-        filtered_df = st.session_state.df_latest_obs[
-            st.session_state.df_latest_obs["measure"].isin(selected_measures)
-            & st.session_state.df_latest_obs["name"].isin(selected_sites)
-        ]
-
-    st.dataframe(
-        filtered_df,
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "latestObsDT": st.column_config.DatetimeColumn(
-                format="YYYY-MM-DD",
-            ),
-            "previousObsDT": st.column_config.DatetimeColumn(
-                format="YYYY-MM-DD",
-            ),
-        },
-    )
-
-
+# Configure the page
 st.set_page_config(
-    page_title="Latest Measures",
-    page_icon="🆕",
-    layout="wide",
-    initial_sidebar_state="expanded",
+    page_title="About - Togo Prefecture Explorer",
+    page_icon="ℹ️",
+    layout="wide"
 )
 
-st.title("🆕 Latest Measures")
-print("app re-render")
-app()
-st.markdown(
-    """
-    ## Glossary
-    | Column            | Description                                               |
-    |-------------------|-----------------------------------------------------------|
-    | `name`            | The site name.                                            |
-    | `healthReg`       | The health region.                                        |
-    | `siteID`          | The site ID.                                              |
-    | `datasetID`       | The dataset ID.                                           |
-    | `measure`         | The measure name.                                         |
-    | `previousObs`     | The measure value that was observed before `latestObs`.   |
-    | `latestObs`       | The measure value that was last recorded.                 |
-    | `latestObsDT`     | The date at which `latestObs` was observed.               |
-    | `previousReportDT`| The date at which the `previousObs` was reported.         |
-    | `latestReportDT`  | The date at which the `latestObs` was reported.           |
-    | `previousObsDT`   | The date at which the `previousObs` was observed.         |
-    | `sampleID_previous` | The sample ID of the previous observation.              |
-    | `sampleID_latest` | The sample ID of the latest observation.                  |
-    """
-)
+# Header
+st.title("About Togo Prefecture Explorer")
+st.markdown("---")
+
+# App Description Section
+st.markdown("## About This Application")
+
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    st.markdown("""
+   **Togo Prefecture Explorer** is an interactive web application designed to enhance **FAIR principles** 
+    (Findable, Accessible, Interoperable, Reusable) for demographic and geographic data in Togo. 
+    This application represents my commitment to making Togolese data more discoverable, accessible, 
+    and usable for researchers, policymakers, and citizens worldwide.
+    
+    ### 🎯 Purpose
+    This application was created to:
+    - **Visualize** population distribution across Togo's prefectures
+    - **Provide** interactive maps for geographic exploration
+    - **Enable** detailed analysis of demographic data
+    - **Support** researchers, policymakers, and students interested in Togo's demographics
+    - **Demonstrate** modern data visualization techniques using Python
+    
+    ### 🌍 Geographic Coverage
+    The app covers all **37 prefectures** of Togo, providing complete national coverage 
+    of administrative divisions and their respective population counts.
+    """)
+
+with col2:
+    # App statistics
+    st.markdown("### 📊 App Statistics")
+    
+    # You can update these with actual data
+    stats_data = {
+        "Total Prefectures": "37",
+        "Total Population": "~7.8M",
+        "Data Sources": "Official Census",
+        "Last Updated": "2024",
+        "Map Projections": "WGS84"
+    }
+    
+    for key, value in stats_data.items():
+        st.metric(key, value)
+
+# Features Section
+st.markdown("---")
+st.markdown("## 🚀 Features")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown("""
+    ### 🗺️ Interactive Mapping
+    - **Choropleth maps** with population-based color coding
+    - **Hover tooltips** for instant prefecture information
+    - **Clickable boundaries** for detailed exploration
+    - **Zoom and pan** functionality for detailed viewing
+    """)
+
+with col2:
+    st.markdown("""
+    ### 🔍 Advanced Filtering
+    - **Single prefecture** detailed view
+    - **Multiple prefecture** comparison mode
+    - **Population range** filtering
+    - **Real-time** map updates
+    """)
+
+with col3:
+    st.markdown("""
+    ### 📈 Data Analysis
+    - **Population statistics** and rankings
+    - **Comparative analysis** between prefectures
+    - **Data export** capabilities (CSV download)
+    - **Interactive charts** and visualizations
+    """)
+
+# Technology Stack
+st.markdown("---")
+st.markdown("## 🛠️ Technology Stack")
+
+tech_col1, tech_col2 = st.columns(2)
+
+with tech_col1:
+    st.markdown("""
+    ### Frontend & Visualization
+    - **Streamlit** - Web application framework
+    - **Folium** - Interactive mapping library
+    - **Plotly** - Advanced data visualization
+    - **HTML/CSS** - Custom styling and layouts
+    """)
+
+with tech_col2:
+    st.markdown("""
+    ### Data Processing
+    - **GeoPandas** - Geospatial data manipulation
+    - **Pandas** - Data analysis and processing
+    - **Python** - Core programming language
+    - **GeoJSON** - Geographic data format
+    """)
+
+# Data Sources Section
+st.markdown("---")
+st.markdown("## 📊 Data Sources")
+
+tech_col1, tech_col2 = st.columns(2) 
+
+with tech_col1:
+  st.markdown("""
+### Geographic Data
+- **Prefecture boundaries**: Official administrative boundaries of Togo
+- **Coordinate system**: WGS84 (EPSG:4326)
+- **Data format**: GeoJSON with embedded population attributes
+
+### Data Quality
+All data has been validated and cross-referenced with official sources to ensure accuracy and reliability.
+""")
+
+with tech_col2:
+  st.markdown("""
+### Population Data
+- **Source**: National census and demographic surveys
+- **Coverage**: All 37 prefectures of Togo
+- **Metrics**: Population counts by administrative division
+- **Currency**: Most recent available census data
+
+""")
+
+# About Developer Section
+st.markdown("---")
+st.markdown("## 👨‍💻 About the Developer")
+
+# Create columns for developer info
+dev_col1, dev_col2, dev_col3 = st.columns([1, 2, 1])
+
+with dev_col2:
+    # You can add your photo here if you have one
+    # st.image("your_photo.jpg", width=200)
+    
+    st.markdown("""
+    ### Asma Bahamyirou, PhD.
+    
+    **Statistician & Causal Inference Specialist**
+    
+    I am Data-driven professional. Passionate about solving complex problems through technology, AI, and advanced statistical methods to deliver actionable insights.
+    
+    #### 🎓 Background
+    - **Education**: [Your education background]
+    - **Specialization**: Geospatial analysis, demographic studies, data visualization
+    - **Experience**: [Your relevant experience]
+    
+    #### 🔬 Research Interests
+    - Geographic Information Systems (GIS)
+    - Population demographics and spatial analysis
+    - Interactive data visualization
+    - West African geographic and demographic studies
+    
+    #### 💻 Technical Skills
+    - **Programming**: Python, R, JavaScript
+    - **GIS Software**: QGIS, ArcGIS, PostGIS
+    - **Data Visualization**: Streamlit, Plotly, Folium, D3.js
+    - **Databases**: PostgreSQL, MongoDB, SQLite
+    """)
+
+# Contact Section
+st.markdown("---")
+st.markdown("## 📧 Get in Touch")
+
+contact_col1, contact_col2, contact_col3 = st.columns(3)
+
+with contact_col1:
+    st.markdown("""
+    ### 📱 Professional
+    - **Email**: abahamyirou@gmail.com
+    - **LinkedIn**: [LinkedIn](https://www.linkedin.com/in/asma-bahamyirou-ph-d-22933233/)
+    - **GitHub**: [PopTogo](https://github.com/Bahamyirou/PopTogo)
+    """)
+
+with contact_col2:
+    st.markdown("""
+    ### 🌐 Online Presence
+    - **Portfolio**: [Your Portfolio Website]
+    - **Blog**: [Your Blog/Medium]
+    - **Twitter**: [@YourTwitter]
+    """)
+
+with contact_col3:
+    st.markdown("""
+    ### 💡 Collaboration
+    - **Research Projects**: Open to collaboration
+    - **Consulting**: Available for GIS projects
+    - **Speaking**: Conference presentations
+    """)
+
+# Project Information
+st.markdown("---")
+st.markdown("## 📋 Project Information")
+
+project_col1, project_col2 = st.columns(2)
+
+with project_col1:
+    st.markdown("""
+    ### 🗓️ Development Timeline
+    - **Started**: [Project start date]
+    - **Version 1.0**: [Release date]
+    - **Last Update**: [Last update date]
+    - **Status**: Active development
+    """)
+
+with project_col2:
+    st.markdown("""
+    ### 🔄 Future Enhancements
+    - Integration with real-time demographic data
+    - Additional socioeconomic indicators
+    - Mobile-responsive design improvements
+    - Multi-language support (French/English)
+    """)
+
+# Acknowledgments
+st.markdown("---")
+st.markdown("## 🙏 Acknowledgments")
+
+st.markdown("""
+### Data Contributors
+- **Togo National Institute of Statistics** - For providing official demographic data
+- **OpenStreetMap Contributors** - For geographic base map data
+- **Streamlit Community** - For the excellent documentation and community support
+
+### Technical Inspiration
+- **Folium Documentation** - For comprehensive mapping examples
+- **GeoPandas Community** - For geospatial data processing guidance
+- **Python GIS Community** - For continuous learning opportunities
+
+### Special Thanks
+Thank you to all the open-source contributors and the data science community 
+for making tools like this possible through collaborative development and knowledge sharing.
+""")
+
+# Disclaimer
+st.markdown("---")
+st.markdown("## ⚠️ Disclaimer")
+
+st.info("""
+**Data Accuracy**: While every effort has been made to ensure data accuracy, 
+this application is intended for educational and research purposes. 
+For official statistics, please consult the Togo National Institute of Statistics.
+
+**Software License**: This application is provided as-is for educational purposes. 
+Please contact the developer for commercial use inquiries.
+""")
+
+# Footer with timestamp
+st.markdown("---")
+current_year = datetime.now().year
+st.markdown(f"*© {current_year} Togo Prefecture Explorer. Built with ❤️ using Streamlit and Python.*")
+
+# Add some custom CSS for better styling
+st.markdown("""
+<style>
+    .metric-card {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #ff6b6b;
+    }
+    
+    .tech-stack {
+        background-color: #e8f4f8;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 0.5rem 0;
+    }
+    
+    .contact-info {
+        text-align: center;
+        background-color: #f8f9fa;
+        padding: 2rem;
+        border-radius: 1rem;
+        margin: 1rem 0;
+    }
+</style>
+""", unsafe_allow_html=True)
