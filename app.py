@@ -3,7 +3,7 @@ import streamlit as st
 pages = {
     "Pages": [
         st.Page("./views/AboutPage.py", title="About", icon="⚠️", default=True),
-        st.Page("./views/page1.py", title="Togolese prefecture page 1", icon="🚰"),
+        st.Page("./views/page1.py", title="Togolese prefecture page", icon="🚰"),
         #st.Page("./views/page2.py", title="Togolese prefecture page 2", icon="⚖️"),
         st.Page("./views/page3.py", title="Prefecture Boundary Viewer", icon="🗺️"),
        # st.Page("./views/page4.py", title="Prefecture Boundary Viewer 2", icon="🆕"),
