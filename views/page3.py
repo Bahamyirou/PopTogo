@@ -195,7 +195,7 @@ if gdf is not None:
                 # Single prefecture detailed view
                 pref_row = filtered_gdf.iloc[0]
                 
-                st.metric("**Name**", pref_row['prefecture'])
+                st.metric("**prefecture**", pref_row['prefecture'])
                 st.metric("**Population**", f"{pref_row['PopCount']:,}")
                 
                 # Calculate rank

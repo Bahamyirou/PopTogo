@@ -3,23 +3,23 @@ from datetime import datetime
 
 # Configure the page
 st.set_page_config(
-    page_title="About - Togo Prefecture Explorer",
+    page_title="About - Togo Stat Explorer",
     page_icon="ℹ️",
     layout="wide"
 )
 
 # Header
-st.title("About Togo Prefecture Explorer")
+st.title("About Togo Stat Explorer")
 st.markdown("---")
 
 # App Description Section
-st.markdown("## About This Application")
+#st.markdown("## About This Application")
 
 col1, col2 = st.columns([2, 1])
 
 with col1:
     st.markdown("""
-   **Togo Prefecture Explorer** is an interactive web application designed to enhance **FAIR principles** 
+   **Togo Stat Explorer** is an interactive web application designed to enhance **FAIR principles** 
     (Findable, Accessible, Interoperable, Reusable) for demographic and geographic data in Togo. 
     This application represents my commitment to making Togolese data more discoverable, accessible, 
     and usable for researchers, policymakers, and citizens worldwide.
@@ -44,9 +44,9 @@ with col2:
     # You can update these with actual data
     stats_data = {
         "Total Prefectures": "37",
-        "Total Population": "~7.8M",
-        "Data Sources": "Official Census",
-        "Last Updated": "2024",
+        "Total Population": "~9.8M",
+        "Data Sources": "Worldometer",
+        "Last Updated": "2025",
         "Map Projections": "WGS84"
     }
     
@@ -123,14 +123,14 @@ with tech_col1:
 - **Coordinate system**: WGS84 (EPSG:4326)
 - **Data format**: GeoJSON with embedded population attributes
 
-### Data Quality
-All data has been validated and cross-referenced with official sources to ensure accuracy and reliability.
 """)
 
+### Data Quality
+#All data has been validated and cross-referenced with official sources to ensure accuracy and reliability.
 with tech_col2:
   st.markdown("""
 ### Population Data
-- **Source**: National census and demographic surveys
+- **Source**:   [National census](https://inseed.tg/) and [Administrative subdivision of Togo](https://github.com/gausoft/Subdivision_administrative_Togo)
 - **Coverage**: All 37 prefectures of Togo
 - **Metrics**: Population counts by administrative division
 - **Currency**: Most recent available census data
@@ -142,9 +142,9 @@ st.markdown("---")
 st.markdown("## 👨‍💻 About the Developer")
 
 # Create columns for developer info
-dev_col1, dev_col2, dev_col3 = st.columns([1, 2, 1])
+dev_col1, dev_col2 , dev_col3 , dev_col4  = st.columns(4)
 
-with dev_col2:
+with dev_col1:
     # You can add your photo here if you have one
     # st.image("your_photo.jpg", width=200)
     
@@ -155,66 +155,53 @@ with dev_col2:
     
     I am Data-driven professional. Passionate about solving complex problems through technology, AI, and advanced statistical methods to deliver actionable insights.
     
+  
+    """)
+
+with dev_col2:
+    # You can add your photo here if you have one
+    # st.image("your_photo.jpg", width=200)
+    
+    st.markdown("""
     #### 🎓 Background
     - **Education**: [Your education background]
     - **Specialization**: Geospatial analysis, demographic studies, data visualization
     - **Experience**: [Your relevant experience]
-    
-    #### 🔬 Research Interests
-    - Geographic Information Systems (GIS)
-    - Population demographics and spatial analysis
-    - Interactive data visualization
-    - West African geographic and demographic studies
-    
-    #### 💻 Technical Skills
-    - **Programming**: Python, R, JavaScript
-    - **GIS Software**: QGIS, ArcGIS, PostGIS
-    - **Data Visualization**: Streamlit, Plotly, Folium, D3.js
-    - **Databases**: PostgreSQL, MongoDB, SQLite
+          
+
     """)
 
-# Contact Section
-st.markdown("---")
-st.markdown("## 📧 Get in Touch")
-
-contact_col1, contact_col2, contact_col3 = st.columns(3)
-
-with contact_col1:
+with dev_col3:
+    # You can add your photo here if you have one
+    # st.image("your_photo.jpg", width=200)
+    
     st.markdown("""
-    ### 📱 Professional
+    ### 📧 Get in Touch
     - **Email**: abahamyirou@gmail.com
     - **LinkedIn**: [LinkedIn](https://www.linkedin.com/in/asma-bahamyirou-ph-d-22933233/)
     - **GitHub**: [PopTogo](https://github.com/Bahamyirou/PopTogo)
+  
     """)
-
-with contact_col2:
-    st.markdown("""
-    ### 🌐 Online Presence
-    - **Portfolio**: [Your Portfolio Website]
-    - **Blog**: [Your Blog/Medium]
-    - **Twitter**: [@YourTwitter]
-    """)
-
-with contact_col3:
-    st.markdown("""
+with dev_col4:
+    st.markdown("""             
     ### 💡 Collaboration
     - **Research Projects**: Open to collaboration
     - **Consulting**: Available for GIS projects
-    - **Speaking**: Conference presentations
+    - **Speaking**: Conference presentations    
     """)
 
 # Project Information
 st.markdown("---")
 st.markdown("## 📋 Project Information")
 
-project_col1, project_col2 = st.columns(2)
+project_col1, project_col2 , project_col3 = st.columns(3)
 
 with project_col1:
     st.markdown("""
     ### 🗓️ Development Timeline
-    - **Started**: [Project start date]
-    - **Version 1.0**: [Release date]
-    - **Last Update**: [Last update date]
+    - **Started**: 2025-12-01
+    - **Version 1.0**: 2025-12-20
+    - **Last Update**: 2025-12-20
     - **Status**: Active development
     """)
 
@@ -226,6 +213,12 @@ with project_col2:
     - Mobile-responsive design improvements
     - Multi-language support (French/English)
     """)
+with project_col3:
+    st.markdown("""             
+    ### 🔀 Want to contribute to this app?
+    - Please create a new branch and submit your changes!
+    - If you’d like to request new features, feel free to open an issue on GitHub or email me.  
+    """)
 
 # Acknowledgments
 st.markdown("---")
@@ -236,11 +229,6 @@ st.markdown("""
 - **Togo National Institute of Statistics** - For providing official demographic data
 - **OpenStreetMap Contributors** - For geographic base map data
 - **Streamlit Community** - For the excellent documentation and community support
-
-### Technical Inspiration
-- **Folium Documentation** - For comprehensive mapping examples
-- **GeoPandas Community** - For geospatial data processing guidance
-- **Python GIS Community** - For continuous learning opportunities
 
 ### Special Thanks
 Thank you to all the open-source contributors and the data science community 
