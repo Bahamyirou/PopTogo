@@ -164,9 +164,8 @@ with dev_col2:
     
     st.markdown("""
     #### 🎓 Background
-    - **Education**: [Your education background]
-    - **Specialization**: Geospatial analysis, demographic studies, data visualization
-    - **Experience**: [Your relevant experience]
+    - **Education**: PhD, Biostatistics (Université de Montréal)
+    - **Specialization**: Statistics | Causal Inference | AI | Privacy Enhancing Techniques | Research
           
 
     """)
@@ -216,7 +215,7 @@ with project_col2:
 with project_col3:
     st.markdown("""             
     ### 🔀 Want to contribute to this app?
-    - Please create a new branch and submit your changes!
+    - Create a new branch in [GitHub](https://github.com/Bahamyirou/PopTogo) and submit your changes or issues!
     - If you’d like to request new features, feel free to open an issue on GitHub or email me.  
     """)
 
