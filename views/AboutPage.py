@@ -146,7 +146,7 @@ dev_col1, dev_col2 , dev_col3 , dev_col4  = st.columns(4)
 
 with dev_col1:
     # You can add your photo here if you have one
-    # st.image("your_photo.jpg", width=200)
+     #st.image("asma_photo.jpg", width=200)
     
     st.markdown("""
     ### Asma Bahamyirou, PhD.
@@ -239,9 +239,9 @@ st.markdown("---")
 st.markdown("## ⚠️ Disclaimer")
 
 st.info("""
-**Data Accuracy**: While every effort has been made to ensure data accuracy, 
-this application is intended for educational and research purposes. 
-For official statistics, please consult the Togo National Institute of Statistics.
+**Data Accuracy**: While efforts have been made to ensure accuracy, this application is intended for educational and research use. 
+        All data points are retrieved from the public website of the National Institute of Statistics of Togo and may be subject to updates or revisions.
+         For official statistics, please consult the National Institute of Statistics of Togo.
 
 **Software License**: This application is provided as-is for educational purposes. 
 Please contact the developer for commercial use inquiries.
@@ -250,7 +250,7 @@ Please contact the developer for commercial use inquiries.
 # Footer with timestamp
 st.markdown("---")
 current_year = datetime.now().year
-st.markdown(f"*© {current_year} Togo Prefecture Explorer. Built with ❤️ using Streamlit and Python.*")
+st.markdown(f"*© {current_year} Togo Prefecture Explorer. Built with ❤️ using Streamlit, Python and AI.*")
 
 # Add some custom CSS for better styling
 st.markdown("""
