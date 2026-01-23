@@ -2,17 +2,11 @@ import streamlit as st
 import folium
 import geopandas as gpd
 from streamlit_folium import st_folium
-<<<<<<< HEAD
 import pandas as pd
-
-=======
 import plotly.express as px
 import plotly.graph_objects as go
-import pandas as pd
-import numpy as np
 
 # Configure the Streamlit page
->>>>>>> 45baab05b73844ad4071b8ab5b464bacf9a1cfe6
 st.set_page_config(
     page_title="Togo Prefecture Population Map",
     page_icon="🗺️",
@@ -20,717 +14,571 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-<<<<<<< HEAD
-st.title("🇹🇬 Togo Prefecture Population with Regional Analysis")
+# App title and description
+st.title("🇹🇬 Togo Prefecture Population Distribution")
 st.markdown("---")
+st.markdown("### Interactive map with regional and prefecture filtering")
+st.markdown("*Filter by region and prefecture, hover over areas for detailed breakdown*")
+
+# Load and process data
+@st.cache_data
+def load_and_process_data():
+    try:
+        gdf = gpd.read_file('population_par_prefecture2.geojson')
+        
+        # Separate prefecture data from regional totals
+        prefecture_data = gdf[gdf['prefecture'].notna()].copy()
+        regional_totals = gdf[gdf['prefecture'].isna()].copy()
+        
+        # Filter valid prefecture data
+        prefecture_valid = prefecture_data.dropna(subset=['Ensemble', 'Masculin', 'Feminin'])
+        
+        return gdf, prefecture_data, prefecture_valid, regional_totals
+        
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return None, None, None, None
 
 # Load data
-@st.cache_data
-def load_data():
-    gdf = gpd.read_file('population_par_prefecture.geojson')
-    prefecture_data = gdf[gdf['prefecture'].notna()].dropna(subset=['Ensemble', 'Masculin', 'Feminin'])
-    regional_totals = gdf[gdf['prefecture'].isna()].dropna(subset=['Region'])
-    return prefecture_data, regional_totals
+gdf, prefecture_data, prefecture_valid, regional_totals = load_and_process_data()
 
-prefecture_data, regional_totals = load_data()
-
-# Sidebar: Region filter
-st.sidebar.header("🎛️ Regional Controls")
-regions = ['All Regions'] + sorted(prefecture_data['Region'].dropna().unique().tolist())
-selected_region = st.sidebar.selectbox("Select Region:", regions)
-
-# Filter data
-if selected_region == 'All Regions':
-    filtered_data = prefecture_data
-else:
-    filtered_data = prefecture_data[prefecture_data['Region'] == selected_region]
-
-# Regional summary in sidebar
-st.sidebar.markdown("### 📊 Regional Information")
-
-if selected_region != 'All Regions':
-    # Show specific region details
-    region_prefs = prefecture_data[prefecture_data['Region'] == selected_region]
+if gdf is not None and len(prefecture_valid) > 0:
     
-    st.sidebar.write(f"**{selected_region}**")
-    st.sidebar.write(f"🏛️ Prefectures: {len(region_prefs)}")
-    st.sidebar.write(f"📊 Total: {region_prefs['Ensemble'].sum():,}")
-    st.sidebar.write(f"👨 Male: {region_prefs['Masculin'].sum():,}")
-    st.sidebar.write(f"👩 Female: {region_prefs['Feminin'].sum():,}")
+    # Sidebar controls
+    st.sidebar.header("🎛️ Map Controls & Filters")
     
-    # Show official regional total if available
-    official_region = regional_totals[regional_totals['Region'] == selected_region]
-    if len(official_region) > 0:
-        official = official_region.iloc[0]
-        st.sidebar.markdown("**Official Regional Total:**")
-        st.sidebar.write(f"📊 {official['Ensemble']:,.0f}")
-        st.sidebar.write(f"👨 {official['Masculin']:,.0f}")
-        st.sidebar.write(f"👩 {official['Feminin']:,.0f}")
-
-# Enhanced hover tooltip with regional context
-def create_enhanced_tooltip(gdf_data):
-    """Create enhanced tooltip with regional context"""
+    # Region filter
+    st.sidebar.markdown("### 🗺️ Regional Filter")
     
-    # Calculate regional totals for context
-    regional_context = {}
-    for region in gdf_data['Region'].dropna().unique():
-        region_data = gdf_data[gdf_data['Region'] == region]
-        regional_context[region] = {
-            'total': region_data['Ensemble'].sum(),
-            'count': len(region_data)
-        }
+    # Get unique regions (excluding null)
+    available_regions = prefecture_valid['Region'].dropna().unique()
+    available_regions = sorted(available_regions)
     
-    # Create tooltips with regional percentage
-    tooltip_data = []
-    for _, row in gdf_data.iterrows():
-        if pd.notna(row['Region']) and row['Region'] in regional_context:
-            regional_total = regional_context[row['Region']]['total']
-            regional_percent = (row['Ensemble'] / regional_total * 100) if regional_total > 0 else 0
-            
-            tooltip_data.append({
-                'prefecture': row['prefecture'],
-                'region': row['Region'],
-                'total': f"{row['Ensemble']:,}",
-                'male': f"{row['Masculin']:,}",
-                'female': f"{row['Feminin']:,}",
-                'regional_percent': f"{regional_percent:.1f}%",
-                'gender_ratio': f"{(row['Masculin']/row['Feminin']*100):.1f}"
-            })
+    # Add "All Regions" option
+    region_options = ['All Regions'] + list(available_regions)
     
-    return pd.DataFrame(tooltip_data)
-
-# Create and display map
-if len(filtered_data) > 0:
-    # Calculate bounds
-    bounds = filtered_data.total_bounds
-    min_lon, min_lat, max_lon, max_lat = bounds
-    center_lat = (min_lat + max_lat) / 2
-    center_lon = (min_lon + max_lon) / 2
-    
-    # Create map
-    m = folium.Map(
-        location=[center_lat, center_lon],
-        zoom_start=8 if selected_region != 'All Regions' else 7,
-        tiles='OpenStreetMap'
+    selected_region = st.sidebar.selectbox(
+        "Select region to display:",
+        region_options,
+        help="Choose a specific region or view all regions"
     )
     
-    # Fit bounds
-    padding = 0.01 if selected_region != 'All Regions' else 0.02
-    m.fit_bounds([
-        [min_lat - padding, min_lon - padding],
-        [max_lat + padding, max_lon + padding]
-    ])
+    # Apply region filter first
+    if selected_region == 'All Regions':
+        filtered_gdf_region = prefecture_valid
+        region_title = "All Regions"
+    else:
+        filtered_gdf_region = prefecture_valid[prefecture_valid['Region'] == selected_region]
+        region_title = f"Region: {selected_region}"
     
-    # Add choropleth
-    folium.Choropleth(
-        geo_data=filtered_data,
-        data=filtered_data,
-        columns=['prefecture', 'Ensemble'],
-        key_on='feature.properties.prefecture',
-        fill_color='YlOrRd',
-        fill_opacity=0.8,
-        line_opacity=1.0,
-        line_color='navy',
-        line_weight=2,
-        legend_name='Population'
-    ).add_to(m)
+    # Prefecture filter section
+    st.sidebar.markdown("### 🏛️ Prefecture Filter")
     
-    # Enhanced tooltips with regional context
-    for _, row in filtered_data.iterrows():
-        if pd.notna(row['Region']):
-            # Calculate prefecture's share of regional population
-            region_data = prefecture_data[prefecture_data['Region'] == row['Region']]
-            regional_total = region_data['Ensemble'].sum()
-            regional_share = (row['Ensemble'] / regional_total * 100) if regional_total > 0 else 0
-            
-            gender_ratio = (row['Masculin'] / row['Feminin'] * 100) if row['Feminin'] > 0 else 0
-            
-            # Create custom tooltip
-            tooltip_html = f"""
-            <div style="font-family: Arial; padding: 10px; background: white; border: 2px solid navy; border-radius: 5px;">
-                <h4 style="margin: 0; color: navy;">{row['prefecture']}</h4>
-                <hr style="margin: 5px 0;">
-                <p style="margin: 2px;"><b>Region:</b> {row['Region']}</p>
-                <p style="margin: 2px;"><b>Total Population:</b> {row['Ensemble']:,}</p>
-                <p style="margin: 2px;"><b>Male:</b> {row['Masculin']:,} ({(row['Masculin']/row['Ensemble']*100):.1f}%)</p>
-                <p style="margin: 2px;"><b>Female:</b> {row['Feminin']:,} ({(row['Feminin']/row['Ensemble']*100):.1f}%)</p>
-                <p style="margin: 2px;"><b>Gender Ratio:</b> {gender_ratio:.1f} M/100F</p>
-                <p style="margin: 2px;"><b>% of {row['Region']}:</b> {regional_share:.1f}%</p>
-            </div>
-            """
-            
-            folium.Marker(
-                location=[row.geometry.centroid.y, row.geometry.centroid.x],
-                popup=folium.Popup(tooltip_html, max_width=300),
-                icon=folium.Icon(color='blue', icon='info-sign', prefix='fa')
-            ).add_to(m)
-    
-    # Display map
-    st_folium(m, width=1200, height=600, use_container_width=True)
-    
-    # Statistics
-    st.markdown("### 📊 Current Selection Statistics")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("Prefectures", len(filtered_data))
-    with col2:
-        st.metric("Total Population", f"{filtered_data['Ensemble'].sum():,}")
-    with col3:
-        st.metric("Male Population", f"{filtered_data['Masculin'].sum():,}")
-    with col4:
-        st.metric("Female Population", f"{filtered_data['Feminin'].sum():,}")
-
-else:
-    st.error("No data available to display.")
-=======
-# App title and description
-st.title("🗺️ Togo Prefecture & Region Population Distribution")
-st.markdown("---")
-
-# Create a container for the map
-with st.container():
-    try:
-        # Load the geojson with population data
-        gdf = gpd.read_file('population_par_prefecture.geojson')
+    if len(filtered_gdf_region) > 0:
+        # Get prefecture list from region-filtered data
+        prefecture_list = sorted(filtered_gdf_region['prefecture'].unique())
         
-        # Column names
-        prefecture_col = 'prefecture'
-        region_col = 'Region'
-        total_col = 'Ensemble'
-        male_col = 'Masculin'
-        female_col = 'Feminin'
-        
-        # Filter out rows with null values in key columns
-        gdf_clean = gdf[gdf[total_col].notna() & gdf[region_col].notna()].copy()
-        
-        # SIDEBAR CONTROLS
-        st.sidebar.title("🎛️ Map Controls")
-        
-        # View mode selector
-        view_mode = st.sidebar.radio(
-            "Select View Mode:",
-            ["By Prefecture (Population)", "By Region (Colored)", "By Prefecture (Filtered by Region)"]
+        # Prefecture filter options
+        filter_option = st.sidebar.radio(
+            "Select prefecture filter mode:",
+            ["All Prefectures", "Single Prefecture", "Multiple Prefectures", "Population Range"],
+            help="Choose how to filter prefectures within the selected region"
         )
         
-        # Region filter (only for filtered view)
-        selected_region = None
-        if view_mode == "By Prefecture (Filtered by Region)":
-            regions = sorted(gdf_clean[region_col].unique())
-            selected_region = st.sidebar.selectbox(
-                "Select Region to Display:",
-                ["All Regions"] + regions
+        # Apply prefecture filters based on selection
+        if filter_option == "Single Prefecture":
+            selected_prefecture = st.sidebar.selectbox(
+                "Choose a prefecture:",
+                prefecture_list,
+                help="Select one prefecture to view in detail"
             )
-        
-        # Color scheme for regions
-        region_colors = {
-            'DISTRICT AUTONOME DU GRAND LOME (DAGL)': '#FF6B6B',
-            'MARITIME SANS GRAND LOME': '#4ECDC4',
-            'PLATEAUX': '#45B7D1',
-            'CENTRALE': '#FFA07A',
-            'KARA': '#98D8C8',
-            'SAVANES': '#F7DC6F'
-        }
-        
-        # Filter data based on selection
-        if selected_region and selected_region != "All Regions":
-            gdf_display = gdf_clean[gdf_clean[region_col] == selected_region].copy()
-        else:
-            gdf_display = gdf_clean.copy()
-        
-        # Calculate map center
-        center_lat = gdf_display.geometry.centroid.y.mean()
-        center_lon = gdf_display.geometry.centroid.x.mean()
-        
-        # Create base map
-        m = folium.Map(
-            location=[center_lat, center_lon], 
-            zoom_start=7,
-            tiles='OpenStreetMap'
-        )
-        
-        # Add different visualizations based on view mode
-        if view_mode == "By Region (Colored)":
-            # Add colored regions
-            for region in gdf_clean[region_col].unique():
-                region_data = gdf_clean[gdf_clean[region_col] == region]
-                color = region_colors.get(region, '#CCCCCC')
+            filtered_gdf = filtered_gdf_region[filtered_gdf_region['prefecture'] == selected_prefecture]
+            prefecture_title = f"Prefecture: {selected_prefecture}"
+            
+        elif filter_option == "Multiple Prefectures":
+            selected_prefectures = st.sidebar.multiselect(
+                "Choose prefectures:",
+                prefecture_list,
+                default=prefecture_list[:min(3, len(prefecture_list))],
+                help="Select multiple prefectures to compare"
+            )
+            if selected_prefectures:
+                filtered_gdf = filtered_gdf_region[filtered_gdf_region['prefecture'].isin(selected_prefectures)]
+                prefecture_title = f"Selected Prefectures ({len(selected_prefectures)})"
+            else:
+                filtered_gdf = filtered_gdf_region
+                prefecture_title = "All Prefectures (none selected)"
                 
-                folium.GeoJson(
-                    region_data,
-                    style_function=lambda x, color=color: {
-                        'fillColor': color,
-                        'color': 'black',
-                        'weight': 2,
-                        'fillOpacity': 0.6
-                    },
-                    tooltip=folium.GeoJsonTooltip(
-                        fields=[prefecture_col, region_col, total_col, male_col, female_col],
-                        aliases=['Prefecture:', 'Region:', 'Total:', 'Male:', 'Female:'],
-                        localize=True,
-                        sticky=False,
-                        labels=True,
-                        style="""
-                            background-color: white;
-                            border: 2px solid black;
-                            border-radius: 3px;
-                            box-shadow: 3px;
-                            padding: 10px;
-                        """,
-                    ),
-                    popup=folium.GeoJsonPopup(
-                        fields=[prefecture_col, region_col, total_col, male_col, female_col],
-                        aliases=['Prefecture:', 'Region:', 'Total:', 'Male:', 'Female:'],
-                    ),
-                    name=region
-                ).add_to(m)
+        elif filter_option == "Population Range":
+            min_pop = int(filtered_gdf_region['Ensemble'].min())
+            max_pop = int(filtered_gdf_region['Ensemble'].max())
             
-            # Add legend for regions
-            legend_html = '''
-            <div style="position: fixed; 
-                        bottom: 50px; right: 50px; width: 250px; height: auto;
-                        background-color: white; border:2px solid grey; z-index:9999; 
-                        font-size:14px; padding: 10px; border-radius: 5px;">
-                <p style="margin-bottom: 10px;"><strong>Regions</strong></p>
-            '''
-            for region, color in region_colors.items():
-                legend_html += f'<p style="margin: 5px;"><span style="background-color:{color}; width: 20px; height: 20px; display: inline-block; margin-right: 5px;"></span>{region}</p>'
-            legend_html += '</div>'
-            m.get_root().html.add_child(folium.Element(legend_html))
-            
+            if min_pop < max_pop:
+                pop_range = st.sidebar.slider(
+                    "Population range:",
+                    min_value=min_pop,
+                    max_value=max_pop,
+                    value=(min_pop, max_pop),
+                    step=max(100, (max_pop - min_pop) // 100),
+                    help="Filter prefectures by population count"
+                )
+                
+                filtered_gdf = filtered_gdf_region[
+                    (filtered_gdf_region['Ensemble'] >= pop_range[0]) & 
+                    (filtered_gdf_region['Ensemble'] <= pop_range[1])
+                ]
+                prefecture_title = f"Population: {pop_range[0]:,} - {pop_range[1]:,}"
+            else:
+                filtered_gdf = filtered_gdf_region
+                prefecture_title = "All Prefectures"
+                st.sidebar.info("Only one prefecture in selected region")
+                
+        else:  # All Prefectures
+            filtered_gdf = filtered_gdf_region
+            prefecture_title = "All Prefectures"
+        
+        # Combine titles for map
+        if selected_region == 'All Regions' and filter_option == "All Prefectures":
+            map_title = "All Togo Prefectures"
+        elif selected_region == 'All Regions':
+            map_title = prefecture_title
+        elif filter_option == "All Prefectures":
+            map_title = region_title
         else:
-            # Add choropleth layer for population
+            map_title = f"{region_title} | {prefecture_title}"
+    
+    else:
+        filtered_gdf = filtered_gdf_region
+        map_title = region_title
+    
+    # Regional summary in sidebar
+    if len(regional_totals) > 0:
+        st.sidebar.markdown("### 📊 Regional Totals")
+        
+        if selected_region != 'All Regions':
+            # Show specific region data
+            region_total = regional_totals[regional_totals['Region'] == selected_region]
+            if len(region_total) > 0:
+                rt = region_total.iloc[0]
+                st.sidebar.write(f"**{selected_region}**")
+                st.sidebar.write(f"📊 Total: {rt['Ensemble']:,.0f}")
+                st.sidebar.write(f"👨 Male: {rt['Masculin']:,.0f}")
+                st.sidebar.write(f"👩 Female: {rt['Feminin']:,.0f}")
+                
+                # Calculate from prefectures for comparison
+                calc_total = filtered_gdf_region['Ensemble'].sum()
+                calc_male = filtered_gdf_region['Masculin'].sum()
+                calc_female = filtered_gdf_region['Feminin'].sum()
+                
+                st.sidebar.write(f"**Calculated from prefectures:**")
+                st.sidebar.write(f"📊 Total: {calc_total:,.0f}")
+                
+                # Show difference if any
+                diff = abs(calc_total - rt['Ensemble']) if pd.notna(rt['Ensemble']) else 0
+                if diff > 0:
+                    st.sidebar.warning(f"⚠️ Difference: {diff:,.0f}")
+                else:
+                    st.sidebar.success("✅ Data consistent!")
+        else:
+            # Show all regional totals
+            for _, region in regional_totals.dropna(subset=['Region']).iterrows():
+                with st.sidebar.expander(f"📍 {region['Region']}"):
+                    st.write(f"Total: {region['Ensemble']:,.0f}")
+                    st.write(f"Male: {region['Masculin']:,.0f}")
+                    st.write(f"Female: {region['Feminin']:,.0f}")
+                    ratio = (region['Masculin'] / region['Feminin'] * 100) if pd.notna(region['Feminin']) and region['Feminin'] > 0 else 0
+                    st.write(f"Ratio: {ratio:.1f} M/100F")
+    
+    # Filter summary
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🎯 Current Filter Summary")
+    st.sidebar.write(f"**Region:** {selected_region}")
+    if 'filter_option' in locals():
+        st.sidebar.write(f"**Prefecture Filter:** {filter_option}")
+    st.sidebar.write(f"**Showing:** {len(filtered_gdf)} prefectures")
+    
+    # Additional filter info for prefecture filters
+    if 'filter_option' in locals() and len(filtered_gdf) > 0:
+        st.sidebar.markdown("### 📈 Filter Results")
+        st.sidebar.write(f"**Total population:** {filtered_gdf['Ensemble'].sum():,}")
+        st.sidebar.write(f"**Average population:** {filtered_gdf['Ensemble'].mean():,.0f}")
+        if len(filtered_gdf) > 1:
+            st.sidebar.write(f"**Highest:** {filtered_gdf['Ensemble'].max():,}")
+            st.sidebar.write(f"**Lowest:** {filtered_gdf['Ensemble'].min():,}")
+    
+    # Main content
+    if len(filtered_gdf) > 0:
+        
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            st.markdown(f"### 🗺️ {map_title}")
+            
+            # Calculate map bounds for filtered data
+            bounds = filtered_gdf.total_bounds
+            min_lon, min_lat, max_lon, max_lat = bounds
+            center_lat = (min_lat + max_lat) / 2
+            center_lon = (min_lon + max_lon) / 2
+            
+            # Calculate dynamic zoom based on area
+            lat_diff = max_lat - min_lat
+            lon_diff = max_lon - min_lon
+            max_diff = max(lat_diff, lon_diff)
+            
+            if max_diff > 2:
+                zoom_level = 7
+            elif max_diff > 1:
+                zoom_level = 8
+            elif max_diff > 0.5:
+                zoom_level = 9
+            elif max_diff > 0.2:
+                zoom_level = 10
+            else:
+                zoom_level = 11
+            
+            # Create map
+            m = folium.Map(
+                location=[center_lat, center_lon],
+                zoom_start=zoom_level,
+                tiles='OpenStreetMap'
+            )
+            
+            # Fit to filtered data bounds
+            padding = 0.01 if len(filtered_gdf) <= 5 else 0.02
+            southwest = [min_lat - padding, min_lon - padding]
+            northeast = [max_lat + padding, max_lon + padding]
+            m.fit_bounds([southwest, northeast])
+            
+            # Add choropleth
             folium.Choropleth(
-                geo_data=gdf_display,
-                data=gdf_display,
-                columns=[prefecture_col, total_col],
-                key_on=f'feature.properties.{prefecture_col}',
+                geo_data=filtered_gdf,
+                data=filtered_gdf,
+                columns=['prefecture', 'Ensemble'],
+                key_on='feature.properties.prefecture',
                 fill_color='YlOrRd',
-                fill_opacity=0.7,
-                line_opacity=0.2,
+                fill_opacity=0.8,
+                line_opacity=1.0,
+                line_color='darkblue',
+                line_weight=3,
                 legend_name='Total Population'
             ).add_to(m)
             
-            # Add interactive layer
+            # Add interactive tooltips
             folium.GeoJson(
-                gdf_display,
+                filtered_gdf,
                 style_function=lambda x: {
                     'fillColor': 'transparent',
-                    'color': 'blue',
-                    'weight': 1,
+                    'color': 'darkblue',
+                    'weight': 3,
                     'fillOpacity': 0
                 },
-                popup=folium.GeoJsonPopup(
-                    fields=[prefecture_col, region_col, total_col, male_col, female_col],
-                    aliases=['Prefecture:', 'Region:', 'Total:', 'Male:', 'Female:'],
-                    localize=True,
-                    labels=True
-                ),
                 tooltip=folium.GeoJsonTooltip(
-                    fields=[prefecture_col, region_col, total_col, male_col, female_col],
+                    fields=['prefecture', 'Region', 'Ensemble', 'Masculin', 'Feminin'],
                     aliases=['Prefecture:', 'Region:', 'Total:', 'Male:', 'Female:'],
                     localize=True,
                     sticky=False,
                     labels=True,
                     style="""
-                        background-color: white;
-                        border: 2px solid black;
-                        border-radius: 3px;
-                        box-shadow: 3px;
-                        padding: 10px;
+                        background-color: #f0f0f0;
+                        border: 3px solid darkblue;
+                        border-radius: 8px;
+                        font-family: Arial, sans-serif;
+                        font-size: 16px;
+                        font-weight: bold;
+                        color: #333;
+                        padding: 12px;
                     """,
-                    max_width=800
+                    max_width=400
+                ),
+                popup=folium.GeoJsonPopup(
+                    fields=['prefecture', 'Region', 'Ensemble', 'Masculin', 'Feminin'],
+                    aliases=['Prefecture:', 'Region:', 'Total:', 'Male:', 'Female:'],
+                    localize=True,
+                    labels=True,
+                    style="background-color: yellow; color: black; font-weight: bold; font-size: 16px; padding: 10px;"
                 )
             ).add_to(m)
+            
+            # Display map
+            map_data = st_folium(m, width=900, height=600)
+            
+        with col2:
+            st.markdown("### 📊 Summary Statistics")
+            
+            # Current selection stats
+            if len(filtered_gdf) > 0:
+                total_pop = filtered_gdf['Ensemble'].sum()
+                male_pop = filtered_gdf['Masculin'].sum()
+                female_pop = filtered_gdf['Feminin'].sum()
+                
+                st.metric("Prefectures Shown", len(filtered_gdf))
+                st.metric("Total Population", f"{total_pop:,}")
+                st.metric("Male Population", f"{male_pop:,}")
+                st.metric("Female Population", f"{female_pop:,}")
+                
+                gender_ratio = (male_pop / female_pop * 100) if female_pop > 0 else 0
+                st.metric("Gender Ratio", f"{gender_ratio:.1f} M/100F")
+                
+                # Show individual prefecture details if single prefecture selected
+                if 'filter_option' in locals() and filter_option == "Single Prefecture" and len(filtered_gdf) == 1:
+                    st.markdown("---")
+                    st.markdown("#### 🏛️ Prefecture Details")
+                    pref_row = filtered_gdf.iloc[0]
+                    
+                    st.write(f"**Prefecture:** {pref_row['prefecture']}")
+                    st.write(f"**Region:** {pref_row['Region']}")
+                    
+                    # Calculate rank within region or all
+                    if selected_region != 'All Regions':
+                        rank_data = filtered_gdf_region
+                        rank_context = f"in {selected_region}"
+                    else:
+                        rank_data = prefecture_valid
+                        rank_context = "nationally"
+                    
+                    rank = (rank_data['Ensemble'] > pref_row['Ensemble']).sum() + 1
+                    st.write(f"**Rank:** #{rank} of {len(rank_data)} {rank_context}")
+                    
+                    # Calculate percentile
+                    percentile = ((rank_data['Ensemble'] <= pref_row['Ensemble']).sum() / len(rank_data)) * 100
+                    st.write(f"**Percentile:** {percentile:.1f}%")
+                
+                # Regional comparison if specific region selected
+                if selected_region != 'All Regions' and len(regional_totals) > 0:
+                    st.markdown("---")
+                    st.markdown("#### 📋 Regional Validation")
+                    
+                    region_official = regional_totals[regional_totals['Region'] == selected_region]
+                    if len(region_official) > 0:
+                        official = region_official.iloc[0]
+                        
+                        st.write("**Official Regional Total:**")
+                        st.write(f"📊 {official['Ensemble']:,.0f}")
+                        
+                        # Use region total, not filtered total
+                        region_calc_total = filtered_gdf_region['Ensemble'].sum()
+                        st.write("**Sum of Prefectures:**")
+                        st.write(f"📊 {region_calc_total:,.0f}")
+                        
+                        diff = abs(region_calc_total - official['Ensemble']) if pd.notna(official['Ensemble']) else 0
+                        if diff == 0:
+                            st.success("✅ Data consistent!")
+                        else:
+                            st.warning(f"⚠️ Difference: {diff:,.0f}")
         
-        # Display the map
-        st.markdown(f"### {'🌍 ' + selected_region if selected_region and selected_region != 'All Regions' else '🌍 All Regions'}")
-        st.markdown("*Hover over any prefecture to see total population and breakdown by sex*")
-        st_data = st_folium(m, width=1200, height=600)
+        # Calculate regional statistics from prefecture data
+        regional_calc = prefecture_valid.groupby('Region').agg({
+            'Ensemble': 'sum',
+            'Masculin': 'sum',
+            'Feminin': 'sum',
+            'prefecture': 'count'
+        }).reset_index()
         
-        # ==================== STATISTICS SECTION ====================
+        regional_calc['Gender_Ratio'] = (regional_calc['Masculin'] / regional_calc['Feminin'] * 100).round(1)
+        
+        # Regional Analysis Section - Following the provided pattern
         st.markdown("---")
+        st.markdown("## 📊 Regional Statistics")
         
-        # Overall Statistics
-        st.markdown("## 📊 Overall Statistics")
-        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        # 5-column metrics layout
+        col1, col2, col3, col4, col5 = st.columns(5)
         
         with col1:
-            st.metric("Regions", gdf_clean[region_col].nunique())
+            st.metric("Total Regions", len(regional_calc))
         
         with col2:
-            st.metric("Prefectures", len(gdf_clean))
+            st.metric("Total Population", f"{regional_calc['Ensemble'].sum():,}")
         
         with col3:
-            st.metric("Total Population", f"{gdf_clean[total_col].sum():,}")
+            st.metric("Total Male", f"{regional_calc['Masculin'].sum():,}")
         
         with col4:
-            st.metric("Total Male", f"{gdf_clean[male_col].sum():,}")
+            st.metric("Total Female", f"{regional_calc['Feminin'].sum():,}")
         
         with col5:
-            st.metric("Total Female", f"{gdf_clean[female_col].sum():,}")
-        
-        with col6:
-            ratio = (gdf_clean[male_col].sum() / gdf_clean[female_col].sum() * 100)
-            st.metric("M/F Ratio", f"{ratio:.1f}%")
+            # Calculate overall gender ratio
+            total_male = regional_calc['Masculin'].sum()
+            total_female = regional_calc['Feminin'].sum()
+            overall_ratio = (total_male / total_female * 100) if total_female > 0 else 0
+            st.metric("Male/Female Ratio", f"{overall_ratio:.1f}%")
         
         st.markdown("---")
         
-        # ==================== REGIONAL ANALYSIS ====================
-        st.markdown("## 🌍 Regional Analysis")
-        
-        # Aggregate by region
-        region_stats = gdf_clean.groupby(region_col).agg({
-            prefecture_col: 'count',
-            total_col: 'sum',
-            male_col: 'sum',
-            female_col: 'sum'
-        }).reset_index()
-        region_stats.columns = ['Region', 'Prefectures', 'Total Population', 'Male', 'Female']
-        region_stats = region_stats.sort_values('Total Population', ascending=False)
-        
-        # Regional visualizations
+        # Create two columns for visualizations
         viz_col1, viz_col2 = st.columns(2)
         
         with viz_col1:
-            st.markdown("### 📊 Population by Region")
-            fig_region_bar = px.bar(
-                region_stats,
-                x='Region',
-                y='Total Population',
-                color='Region',
-                color_discrete_map=region_colors,
-                text='Total Population'
-            )
-            fig_region_bar.update_traces(texttemplate='%{text:,.0f}', textposition='outside')
-            fig_region_bar.update_layout(
-                xaxis_tickangle=-45,
-                height=500,
-                showlegend=False,
-                xaxis_title="",
-                yaxis_title="Population"
-            )
-            st.plotly_chart(fig_region_bar, use_container_width=True)
+            st.markdown("### 🏆 Regions by Total Population")
+            # Sort regions by population
+            top_regions = regional_calc.sort_values('Ensemble', ascending=False)[['Region', 'Ensemble', 'Masculin', 'Feminin']].copy()
+            top_regions.columns = ['Region', 'Total Population', 'Male', 'Female']
+            top_regions.index = range(1, len(top_regions) + 1)
+            
+            # Format numbers for display
+            display_regions = top_regions.copy()
+            display_regions['Total Population'] = display_regions['Total Population'].apply(lambda x: f"{x:,}")
+            display_regions['Male'] = display_regions['Male'].apply(lambda x: f"{x:,}")
+            display_regions['Female'] = display_regions['Female'].apply(lambda x: f"{x:,}")
+            
+            st.dataframe(display_regions, use_container_width=True)
         
         with viz_col2:
-            st.markdown("### 🥧 Regional Distribution (%)")
-            fig_region_pie = px.pie(
-                region_stats,
-                values='Total Population',
-                names='Region',
-                color='Region',
-                color_discrete_map=region_colors,
+            st.markdown("### 👥 Overall Gender Distribution")
+            # Pie chart for overall gender distribution
+            gender_data = pd.DataFrame({
+                'Gender': ['Male', 'Female'],
+                'Count': [regional_calc['Masculin'].sum(), regional_calc['Feminin'].sum()]
+            })
+            
+            fig_pie = px.pie(
+                gender_data, 
+                values='Count', 
+                names='Gender',
+                color='Gender',
+                color_discrete_map={'Male': '#4A90E2', 'Female': '#E94B3C'},
                 hole=0.4
             )
-            fig_region_pie.update_traces(textposition='inside', textinfo='percent+label')
-            fig_region_pie.update_layout(height=500)
-            st.plotly_chart(fig_region_pie, use_container_width=True)
+            fig_pie.update_layout(height=300)
+            st.plotly_chart(fig_pie, use_container_width=True)
         
-        # Regional statistics table
-        st.markdown("### 📋 Regional Statistics Summary")
-        region_stats_display = region_stats.copy()
-        region_stats_display['% Male'] = (region_stats_display['Male'] / region_stats_display['Total Population'] * 100).round(2)
-        region_stats_display['% Female'] = (region_stats_display['Female'] / region_stats_display['Total Population'] * 100).round(2)
-        region_stats_display['Avg Pop/Prefecture'] = (region_stats_display['Total Population'] / region_stats_display['Prefectures']).round(0)
-        st.dataframe(region_stats_display, use_container_width=True)
+        # Bar chart for regions by gender
+        st.markdown("### 📊 Regional Population by Gender")
         
-        # ==================== GENDER ANALYSIS ====================
-        st.markdown("---")
-        st.markdown("## 👥 Gender Distribution Analysis")
-        
-        # Regional gender breakdown
-        st.markdown("### Gender Distribution by Region")
-        
-        # Prepare data for stacked bar chart
-        gender_by_region = region_stats.copy()
-        
-        fig_gender_region = go.Figure()
-        fig_gender_region.add_trace(go.Bar(
+        fig_bar = go.Figure()
+        fig_bar.add_trace(go.Bar(
             name='Male',
-            x=gender_by_region['Region'],
-            y=gender_by_region['Male'],
-            marker_color='#4A90E2',
-            text=gender_by_region['Male'],
-            texttemplate='%{text:,.0f}',
-            textposition='inside'
+            x=regional_calc['Region'],
+            y=regional_calc['Masculin'],
+            marker_color='#4A90E2'
         ))
-        fig_gender_region.add_trace(go.Bar(
+        fig_bar.add_trace(go.Bar(
             name='Female',
-            x=gender_by_region['Region'],
-            y=gender_by_region['Female'],
-            marker_color='#E94B3C',
-            text=gender_by_region['Female'],
-            texttemplate='%{text:,.0f}',
-            textposition='inside'
+            x=regional_calc['Region'],
+            y=regional_calc['Feminin'],
+            marker_color='#E94B3C'
         ))
         
-        fig_gender_region.update_layout(
-            barmode='stack',
+        fig_bar.update_layout(
+            barmode='group',
             xaxis_tickangle=-45,
             height=500,
             xaxis_title="Region",
             yaxis_title="Population"
         )
-        st.plotly_chart(fig_gender_region, use_container_width=True)
+        st.plotly_chart(fig_bar, use_container_width=True)
         
-        # ==================== PREFECTURE DETAILS ====================
+        # Complete regional statistics table
+        st.markdown("### 📋 Complete Regional Statistics")
+        
+        # Create a comprehensive regional table
+        regional_stats = regional_calc.copy()
+        regional_stats['% Male'] = (regional_stats['Masculin'] / regional_stats['Ensemble'] * 100).round(2)
+        regional_stats['% Female'] = (regional_stats['Feminin'] / regional_stats['Ensemble'] * 100).round(2)
+        
+        # Rename columns for display
+        regional_stats_display = regional_stats[['Region', 'prefecture', 'Ensemble', 'Masculin', 'Feminin', '% Male', '% Female', 'Gender_Ratio']].copy()
+        regional_stats_display.columns = ['Region', 'Prefectures', 'Total Population', 'Male', 'Female', '% Male', '% Female', 'M/F Ratio']
+        
+        # Sort by total population
+        regional_stats_display = regional_stats_display.sort_values('Total Population', ascending=False).reset_index(drop=True)
+        regional_stats_display.index = range(1, len(regional_stats_display) + 1)
+        
+        st.dataframe(regional_stats_display, use_container_width=True, height=400)
+        
+        # Download button for regional data
+        regional_csv = regional_stats_display.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Regional Statistics as CSV",
+            data=regional_csv,
+            file_name="togo_regional_population_statistics.csv",
+            mime="text/csv",
+        )
+        
+        # Prefecture details for current selection
         st.markdown("---")
-        st.markdown("## 🏘️ Prefecture Details")
+        st.markdown(f"### 🏛️ Prefecture Details - {map_title}")
         
-        tab1, tab2, tab3 = st.tabs(["📊 Top Prefectures", "📈 By Region", "📋 Complete Data"])
-        
-        with tab1:
-            col1, col2 = st.columns(2)
+        if len(filtered_gdf) > 0:
+            # Create detailed prefecture table
+            prefecture_details = filtered_gdf.copy()
+            prefecture_details['Gender_Ratio'] = (prefecture_details['Masculin'] / prefecture_details['Feminin'] * 100).round(1)
+            prefecture_details['Male_Percent'] = (prefecture_details['Masculin'] / prefecture_details['Ensemble'] * 100).round(1)
+            prefecture_details['Female_Percent'] = (prefecture_details['Feminin'] / prefecture_details['Ensemble'] * 100).round(1)
+            
+            # Sort by population
+            prefecture_details = prefecture_details.sort_values('Ensemble', ascending=False)
+            prefecture_details['Rank'] = range(1, len(prefecture_details) + 1)
+            
+            # Format for display
+            prefecture_display = prefecture_details[['Rank', 'prefecture', 'Region', 'Ensemble', 'Masculin', 'Feminin', 'Gender_Ratio']].copy()
+            prefecture_display['Total'] = prefecture_display['Ensemble'].apply(lambda x: f"{x:,}")
+            prefecture_display['Male'] = prefecture_display['Masculin'].apply(lambda x: f"{x:,}")
+            prefecture_display['Female'] = prefecture_display['Feminin'].apply(lambda x: f"{x:,}")
+            
+            final_display = prefecture_display[['Rank', 'prefecture', 'Region', 'Total', 'Male', 'Female', 'Gender_Ratio']]
+            final_display.columns = ['Rank', 'Prefecture', 'Region', 'Total Pop', 'Male', 'Female', 'M/F Ratio']
+            
+            st.dataframe(final_display, use_container_width=True, height=300)
+            
+            # Summary stats for current selection
+            col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                st.markdown("### 🏆 Top 10 Prefectures by Population")
-                top_10 = gdf_clean.nlargest(10, total_col)[[prefecture_col, region_col, total_col, male_col, female_col]].copy()
-                top_10.columns = ['Prefecture', 'Region', 'Total', 'Male', 'Female']
-                top_10['% Male'] = (top_10['Male'] / top_10['Total'] * 100).round(2)
-                top_10['% Female'] = (top_10['Female'] / top_10['Total'] * 100).round(2)
-                top_10.index = range(1, len(top_10) + 1)
-                st.dataframe(top_10, use_container_width=True)
-            
+                st.metric("Prefectures", len(filtered_gdf))
             with col2:
-                st.markdown("### 📊 Top 10 - Gender Breakdown")
-                top_10_chart = gdf_clean.nlargest(10, total_col)[[prefecture_col, male_col, female_col]].copy()
-                top_10_chart.columns = ['Prefecture', 'Male', 'Female']
-                
-                fig_bar = go.Figure()
-                fig_bar.add_trace(go.Bar(
-                    name='Male',
-                    x=top_10_chart['Prefecture'],
-                    y=top_10_chart['Male'],
-                    marker_color='#4A90E2'
-                ))
-                fig_bar.add_trace(go.Bar(
-                    name='Female',
-                    x=top_10_chart['Prefecture'],
-                    y=top_10_chart['Female'],
-                    marker_color='#E94B3C'
-                ))
-                
-                fig_bar.update_layout(
-                    barmode='group',
-                    xaxis_tickangle=-45,
-                    height=400,
-                    xaxis_title="",
-                    yaxis_title="Population"
-                )
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.metric("Total Population", f"{filtered_gdf['Ensemble'].sum():,}")
+            with col3:
+                avg_pop = filtered_gdf['Ensemble'].mean()
+                st.metric("Average Population", f"{avg_pop:,.0f}")
+            with col4:
+                highest_pop = filtered_gdf['Ensemble'].max()
+                highest_name = filtered_gdf.loc[filtered_gdf['Ensemble'].idxmax(), 'prefecture']
+                st.metric("Highest", f"{highest_pop:,}", f"{highest_name}")
         
-        with tab2:
-            st.markdown("### 📍 Prefectures Grouped by Region")
-            
-            # Select region to display
-            display_region = st.selectbox(
-                "Select Region:",
-                sorted(gdf_clean[region_col].unique()),
-                key='region_selector'
-            )
-            
-            region_data = gdf_clean[gdf_clean[region_col] == display_region][[
-                prefecture_col, total_col, male_col, female_col
-            ]].copy()
-            region_data.columns = ['Prefecture', 'Total Population', 'Male', 'Female']
-            region_data['% Male'] = (region_data['Male'] / region_data['Total Population'] * 100).round(2)
-            region_data['% Female'] = (region_data['Female'] / region_data['Total Population'] * 100).round(2)
-            region_data = region_data.sort_values('Total Population', ascending=False).reset_index(drop=True)
-            region_data.index = range(1, len(region_data) + 1)
-            
-            # Display metrics for selected region
-            rcol1, rcol2, rcol3, rcol4 = st.columns(4)
-            with rcol1:
-                st.metric("Prefectures", len(region_data))
-            with rcol2:
-                st.metric("Total Pop", f"{region_data['Total Population'].sum():,}")
-            with rcol3:
-                st.metric("Male", f"{region_data['Male'].sum():,}")
-            with rcol4:
-                st.metric("Female", f"{region_data['Female'].sum():,}")
-            
-            st.dataframe(region_data, use_container_width=True, height=400)
-            
-            # Chart for selected region
-            st.markdown(f"### 📊 Population Distribution in {display_region}")
-            fig_region_detail = px.bar(
-                region_data.reset_index(),
-                x='Prefecture',
-                y=['Male', 'Female'],
-                title=f"Gender Distribution - {display_region}",
-                barmode='group',
-                color_discrete_map={'Male': '#4A90E2', 'Female': '#E94B3C'}
-            )
-            fig_region_detail.update_layout(xaxis_tickangle=-45, height=400)
-            st.plotly_chart(fig_region_detail, use_container_width=True)
+        else:
+            st.warning("⚠️ No prefectures found for the current selection.")
         
-        with tab3:
-            st.markdown("### 📋 Complete Prefecture Statistics")
+        # Download section
+        st.markdown("---")
+        st.markdown("### 📥 Data Export Options")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Export filtered prefecture data
+            filtered_csv = filtered_gdf[['prefecture', 'Region', 'Ensemble', 'Masculin', 'Feminin']].copy()
+            filtered_csv['Gender_Ratio'] = (filtered_csv['Masculin'] / filtered_csv['Feminin'] * 100).round(2)
             
-            # Create comprehensive table
-            stats_df = gdf_clean[[region_col, prefecture_col, total_col, male_col, female_col]].copy()
-            stats_df.columns = ['Region', 'Prefecture', 'Total Population', 'Male', 'Female']
-            stats_df['% Male'] = (stats_df['Male'] / stats_df['Total Population'] * 100).round(2)
-            stats_df['% Female'] = (stats_df['Female'] / stats_df['Total Population'] * 100).round(2)
+            filename_suffix = selected_region.lower().replace(' ', '_') if selected_region != 'All Regions' else 'all_regions'
+            if 'filter_option' in locals() and filter_option != "All Prefectures":
+                filename_suffix += f"_{filter_option.lower().replace(' ', '_')}"
             
-            # Sort by region then population
-            stats_df = stats_df.sort_values(['Region', 'Total Population'], ascending=[True, False]).reset_index(drop=True)
-            stats_df.index = range(1, len(stats_df) + 1)
-            
-            st.dataframe(stats_df, use_container_width=True, height=500)
-            
-            # Download button
-            csv = stats_df.to_csv(index=False)
             st.download_button(
-                label="📥 Download Complete Statistics as CSV",
-                data=csv,
-                file_name="togo_population_complete_stats.csv",
-                mime="text/csv",
+                label="📄 Download Filtered Data",
+                data=filtered_csv.to_csv(index=False),
+                file_name=f"togo_prefecture_{filename_suffix}_population.csv",
+                mime="text/csv"
             )
         
-        # ==================== COMPARATIVE ANALYSIS ====================
-        st.markdown("---")
-        st.markdown("## 📊 Comparative Analysis")
-        
-        comp_col1, comp_col2 = st.columns(2)
-        
-        with comp_col1:
-            st.markdown("### 🔍 Regional Gender Ratio Comparison")
+        with col2:
+            # Export regional summary
+            regional_csv = regional_calc.copy()
             
-            region_gender_ratio = region_stats.copy()
-            region_gender_ratio['M/F Ratio (%)'] = (region_gender_ratio['Male'] / region_gender_ratio['Female'] * 100).round(2)
-            region_gender_ratio['Difference'] = region_gender_ratio['Male'] - region_gender_ratio['Female']
-            
-            fig_ratio = px.bar(
-                region_gender_ratio,
-                x='Region',
-                y='M/F Ratio (%)',
-                color='M/F Ratio (%)',
-                color_continuous_scale=['#E94B3C', '#FFFFFF', '#4A90E2'],
-                color_continuous_midpoint=100,
-                text='M/F Ratio (%)'
-            )
-            fig_ratio.add_hline(y=100, line_dash="dash", line_color="black", 
-                               annotation_text="Equal Ratio (100%)")
-            fig_ratio.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
-            fig_ratio.update_layout(xaxis_tickangle=-45, height=400)
-            st.plotly_chart(fig_ratio, use_container_width=True)
-            
-            st.dataframe(
-                region_gender_ratio[['Region', 'Male', 'Female', 'M/F Ratio (%)', 'Difference']],
-                use_container_width=True
+            st.download_button(
+                label="📊 Download Regional Summary",
+                data=regional_csv.to_csv(index=False),
+                file_name="togo_regional_population_summary.csv",
+                mime="text/csv"
             )
         
-        with comp_col2:
-            st.markdown("### 📈 Average Population per Prefecture by Region")
-            
-            avg_pop = region_stats.copy()
-            avg_pop['Avg Population'] = (avg_pop['Total Population'] / avg_pop['Prefectures']).round(0)
-            
-            fig_avg = px.bar(
-                avg_pop,
-                x='Region',
-                y='Avg Population',
-                color='Region',
-                color_discrete_map=region_colors,
-                text='Avg Population'
-            )
-            fig_avg.update_traces(texttemplate='%{text:,.0f}', textposition='outside')
-            fig_avg.update_layout(
-                xaxis_tickangle=-45,
-                height=400,
-                showlegend=False,
-                xaxis_title="",
-                yaxis_title="Average Population per Prefecture"
-            )
-            st.plotly_chart(fig_avg, use_container_width=True)
-            
-            st.dataframe(
-                avg_pop[['Region', 'Prefectures', 'Total Population', 'Avg Population']],
-                use_container_width=True
-            )
-        
-        # ==================== DENSITY ANALYSIS ====================
-        st.markdown("---")
-        st.markdown("## 🗺️ Regional Insights")
-        
-        insight_col1, insight_col2, insight_col3 = st.columns(3)
-        
-        with insight_col1:
-            st.markdown("### 🏆 Most Populous Region")
-            most_populous = region_stats.iloc[0]
-            st.metric("Region", most_populous['Region'])
-            st.metric("Population", f"{most_populous['Total Population']:,}")
-            st.metric("Prefectures", int(most_populous['Prefectures']))
-        
-        with insight_col2:
-            st.markdown("### 🏆 Most Populous Prefecture")
-            most_pop_prefecture = gdf_clean.nlargest(1, total_col).iloc[0]
-            st.metric("Prefecture", most_pop_prefecture[prefecture_col])
-            st.metric("Region", most_pop_prefecture[region_col])
-            st.metric("Population", f"{most_pop_prefecture[total_col]:,}")
-        
-        with insight_col3:
-            st.markdown("### ⚖️ Most Balanced Region (Gender)")
-            region_stats_ratio = region_stats.copy()
-            region_stats_ratio['Ratio Diff'] = abs((region_stats_ratio['Male'] / region_stats_ratio['Female'] * 100) - 100)
-            balanced_region = region_stats_ratio.nsmallest(1, 'Ratio Diff').iloc[0]
-            st.metric("Region", balanced_region['Region'])
-            ratio_val = (balanced_region['Male'] / balanced_region['Female'] * 100)
-            st.metric("M/F Ratio", f"{ratio_val:.2f}%")
-            st.metric("Difference", f"{abs(balanced_region['Male'] - balanced_region['Female']):,.0f}")
-        
-        # ==================== HEATMAP ====================
-        st.markdown("---")
-        st.markdown("## 🌡️ Population Heatmap by Region and Gender")
-        
-        # Prepare data for heatmap
-        heatmap_data = gdf_clean.groupby(region_col).agg({
-            male_col: 'sum',
-            female_col: 'sum',
-            total_col: 'sum'
-        }).reset_index()
-        
-        # Normalize for better visualization
-        heatmap_data['Male (%)'] = (heatmap_data[male_col] / heatmap_data[total_col] * 100).round(2)
-        heatmap_data['Female (%)'] = (heatmap_data[female_col] / heatmap_data[total_col] * 100).round(2)
-        
-        fig_heatmap = go.Figure(data=go.Heatmap(
-            z=[heatmap_data['Male (%)'].values, heatmap_data['Female (%)'].values],
-            x=heatmap_data[region_col].values,
-            y=['Male %', 'Female %'],
-            colorscale='RdBu_r',
-            text=[[f"{v:.1f}%" for v in heatmap_data['Male (%)'].values],
-                  [f"{v:.1f}%" for v in heatmap_data['Female (%)'].values]],
-            texttemplate='%{text}',
-            textfont={"size": 12},
-            colorbar=dict(title="Percentage")
-        ))
-        
-        fig_heatmap.update_layout(
-            title="Gender Distribution Percentage by Region",
-            xaxis_title="Region",
-            yaxis_title="Gender",
-            height=300
-        )
-        st.plotly_chart(fig_heatmap, use_container_width=True)
-        
-    except FileNotFoundError:
-        st.error("❌ Error: 'population_par_prefecture.geojson' file not found!")
-        st.markdown("Please make sure the GeoJSON file is in the same directory as this app.")
-        
-    except KeyError as e:
-        st.error(f"❌ Error: Column not found - {str(e)}")
-        st.markdown("**Please check the column names in your GeoJSON file.**")
-        
-    except Exception as e:
-        st.error(f"❌ Error loading the map: {str(e)}")
-        st.markdown("Please check your data file and try again.")
-        import traceback
-        st.code(traceback.format_exc())
+    
+    else:
+        st.error("No valid prefecture data found for the current selection.")
+
+else:
+    st.error("Failed to load data. Please check the file path and format.")
 
 # Footer
 st.markdown("---")
-st.markdown("*Data visualization built with Streamlit, Folium, and Plotly | Population data by Prefecture and Region*")
->>>>>>> 45baab05b73844ad4071b8ab5b464bacf9a1cfe6
+st.markdown("*🇹🇬 Advanced demographic analysis with dual regional and prefecture filtering*")
+st.markdown("*📊 FAIR data principles implementation for Togo's administrative divisions*")
