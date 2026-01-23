@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-# Configure the Streamlit page xxx
+# Configure the Streamlit page xxxvvvv
 st.set_page_config(
     page_title="Togo Prefecture Population Map",
     page_icon="🗺️",
