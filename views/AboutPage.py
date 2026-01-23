@@ -19,10 +19,9 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     st.markdown("""
-   **Togo Stat Explorer** is an interactive web application designed to enhance **FAIR principles** 
-    (Findable, Accessible, Interoperable, Reusable) for demographic and geographic data in Togo. 
-    This application represents my commitment to making Togolese data more discoverable, accessible, 
-    and usable for researchers, policymakers, and citizens worldwide.
+   **Togo Stat Explorer** is an interactive web application built to promote open and equitable access to demographic and geographic data in Togo.
+    Grounded in the **FAIR principles**, the platform aims to ensure that Togolese data is not only findable and reusable,
+                 but truly accessible to everyone, empowering informed decision-making across research, policy, and the public.
     
     ### 🎯 Purpose
     This application was created to:
@@ -33,7 +32,7 @@ with col1:
     - **Demonstrate** modern data visualization techniques using Python
     
     ### 🌍 Geographic Coverage
-    The app covers all **37 prefectures** of Togo, providing complete national coverage 
+    The app covers all **40 prefectures** of Togo, providing complete national coverage 
     of administrative divisions and their respective population counts.
     """)
 
@@ -43,7 +42,7 @@ with col2:
     
     # You can update these with actual data
     stats_data = {
-        "Total Prefectures": "37",
+        "Total Prefectures": "40",
         "Total Population": "~9.8M",
         "Data Sources": "Worldometer",
         "Last Updated": "2025",
@@ -130,7 +129,7 @@ with tech_col1:
 with tech_col2:
   st.markdown("""
 ### Population Data
-- **Source**:   [National census](https://inseed.tg/) and [Administrative subdivision of Togo](https://github.com/gausoft/Subdivision_administrative_Togo)
+- **Source**:   [National census](https://inseed.tg/)
 - **Coverage**: All 37 prefectures of Togo
 - **Metrics**: Population counts by administrative division
 - **Currency**: Most recent available census data
