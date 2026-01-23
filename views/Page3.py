@@ -15,7 +15,7 @@ st.set_page_config(
 )
 
 # App title and description
-st.title("🇹🇬 Togo Prefecture Population Distribution")
+st.title("Togo Prefecture Population Distribution")
 st.markdown("---")
 st.markdown("### Interactive map with regional and prefecture filtering")
 st.markdown("*Filter by region and prefecture, hover over areas for detailed breakdown*")
@@ -580,5 +580,4 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown("*🇹🇬 Advanced demographic analysis with dual regional and prefecture filtering*")
-st.markdown("*📊 FAIR data principles implementation for Togo's administrative divisions*")
+st.markdown("*📊 Advanced demographic analysis with dual regional and prefecture filtering*")
