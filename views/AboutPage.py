@@ -86,28 +86,28 @@ with col3:
     """)
 
 # Technology Stack
-st.markdown("---")
-st.markdown("## 🛠️ Technology Stack")
+#st.markdown("---")
+#st.markdown("## 🛠️ Technology Stack")
 
-tech_col1, tech_col2 = st.columns(2)
+#tech_col1, tech_col2 = st.columns(2)
 
-with tech_col1:
-    st.markdown("""
-    ### Frontend & Visualization
-    - **Streamlit** - Web application framework
-    - **Folium** - Interactive mapping library
-    - **Plotly** - Advanced data visualization
-    - **HTML/CSS** - Custom styling and layouts
-    """)
+#with tech_col1:
+ #   st.markdown("""
+ #   ### Frontend & Visualization
+ #   - **Streamlit** - Web application framework
+ #   - **Folium** - Interactive mapping library
+ #   - **Plotly** - Advanced data visualization
+ #   - **HTML/CSS** - Custom styling and layouts
+ #   """)
 
-with tech_col2:
-    st.markdown("""
+#with tech_col2:
+#    st.markdown("""
     ### Data Processing
-    - **GeoPandas** - Geospatial data manipulation
-    - **Pandas** - Data analysis and processing
-    - **Python** - Core programming language
-    - **GeoJSON** - Geographic data format
-    """)
+#   - **GeoPandas** - Geospatial data manipulation
+ #   - **Pandas** - Data analysis and processing
+ #   - **Python** - Core programming language
+ #   - **GeoJSON** - Geographic data format
+#    """)
 
 # Data Sources Section
 st.markdown("---")
@@ -138,26 +138,19 @@ with tech_col2:
 
 # About Developer Section
 st.markdown("---")
-st.markdown("## 👨‍💻 About the Developer")
+st.markdown("## 👨‍💻 About the Developer: Asma Bahamyirou, PhD")
 
-# Create columns for developer info
-dev_col1, dev_col2 , dev_col3 , dev_col4  = st.columns(4)
-
-with dev_col1:
-    # You can add your photo here if you have one
-     #st.image("asma_photo.jpg", width=200)
-    
-    st.markdown("""
-    ### Asma Bahamyirou, PhD.
-    
-    **Statistician & Causal Inference Specialist**
-    
-    I am Data-driven professional. Passionate about solving complex problems through technology, AI, and advanced statistical methods to deliver actionable insights.
+st.markdown("""
+   
+    Statistician & Causal Inference Specialist. I am Data-driven professional. Passionate about solving complex problems through technology, AI, and advanced statistical methods to deliver actionable insights.
     
   
     """)
+# Create columns for developer info
+dev_col1, dev_col2 , dev_col3  = st.columns(3)
 
-with dev_col2:
+
+with dev_col1:
     # You can add your photo here if you have one
     # st.image("your_photo.jpg", width=200)
     
@@ -169,7 +162,7 @@ with dev_col2:
 
     """)
 
-with dev_col3:
+with dev_col2:
     # You can add your photo here if you have one
     # st.image("your_photo.jpg", width=200)
     
@@ -180,7 +173,8 @@ with dev_col3:
     - **GitHub**: [PopTogo](https://github.com/Bahamyirou/PopTogo)
   
     """)
-with dev_col4:
+    
+with dev_col3:
     st.markdown("""             
     ### 💡 Collaboration
     - **Research Projects**: Open to collaboration
@@ -199,7 +193,7 @@ with project_col1:
     ### 🗓️ Development Timeline
     - **Started**: 2025-12-01
     - **Version 1.0**: 2025-12-20
-    - **Last Update**: 2025-12-20
+    - **Last Update**: 2026-01-20
     - **Status**: Active development
     """)
 
@@ -213,7 +207,7 @@ with project_col2:
     """)
 with project_col3:
     st.markdown("""             
-    ### 🔀 Want to contribute to this app?
+    ### 🔀 Want to contribute ?
     - Create a new branch in [GitHub](https://github.com/Bahamyirou/PopTogo) and submit your changes or issues!
     - If you’d like to request new features, feel free to open an issue on GitHub or email me.  
     """)
