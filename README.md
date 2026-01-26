@@ -7,37 +7,28 @@ A Streamlit-based dashboard for monitoring, analyzing, Togolese population stati
 
 ## 🚀 Features
 
-- 🚰 View and impute XXXX data
-- 🦠 View and XXXXX
-- 🆕 View the 2 most recent XXXXX
-- ⚠️ View recorded XXXXX
+- ⚠️ About Page
+- 🗺️ Population Distribution
 
 ## 🏗️ Architecture
 
 ```
-wastewater-trends-streamlit/
+Togo Stat Pop - streamlit/
 ├── app.py                    # Main application entry
 ├── views/                    # Page components
-│   ├── ww-trends.py          # Handles the "Wastewater Trends" page
-│   ├── mpox.py               # Handles the "Mpox Trends" page
-│   ├── latest-measures.py    # Handles the "Latest Measures" page
-│   ├── large-jumps.py        # Handles the "Large Jumps" page
-│   ├── admin-page.py         # Shows a log of user actions to admin users
+│   ├── AboutPage.py          # About the page
+│   ├── PopDistribution.py    # Prefecture and Regional Distribution page
 ├── utils.py                  # Shared util functions
 ├── .env                      # Environment configuration
 └── requirements.txt          # Dependencies
 ```
 
-![App Architecture Diagram](diagram.png)
-
-#### Refer to [architecture.md](architecture.md) for a more detailed overview
-
 
 ## 🛠️ Installation
 
 ```bash
-git clone https://github.com/PHACDataHub/wastewater-trends-streamlit.git
-cd  C:\StreamlitTogo
+git clone https://github.com/Bahamyirou/PopTogo.git
+cd  C:\PopTogo
 python -m venv .venv
 source .venv/bin/activate # If on Linux
 .venv\Scripts\activate # If on Windows
@@ -58,10 +49,3 @@ Create a `.env` file in the project root:
 
 1. **Cold Cluster Startup:**  
    The first data load may take up to 5 minutes if the data cluster is cold. Please allow extra time on startup.
-
-2. **Configuration Errors:**  
-   - Ensure your `.env` file is set up correctly with the proper values for `ADB_INSTANCE_NAME`, `ADB_HTTP_PATH`, and `ADB_API_KEY`.  
-   - Verify that the table names in the `.env` (e.g. `WW_TRENDS_TABLE`, `MPOX_TABLE`, etc.) are correct.
-
-3. **Permission Issues:**  
-   If you cannot modify data or load certain pages, check your permissions. In development mode, The `DEVELOPMENT` flag should be added to your `.env`.
