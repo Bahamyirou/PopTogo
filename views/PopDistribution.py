@@ -17,8 +17,8 @@ st.set_page_config(
 # App title and description
 st.title("Togo Prefecture Population Distribution")
 st.markdown("---")
-st.markdown("### Interactive map with regional and prefecture filtering")
-st.markdown("*Filter by region and prefecture, hover over areas for detailed breakdown*")
+#st.markdown("### 🗺️ Interactive Togo Population Explorer")
+
 
 # Load and process data
 @st.cache_data
