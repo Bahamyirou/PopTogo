@@ -17,8 +17,8 @@ st.set_page_config(
 # App title and description
 st.title("Togo Prefecture Population Distribution")
 st.markdown("---")
-st.markdown("### Interactive map with regional and prefecture filtering")
-st.markdown("*Filter by region and prefecture, hover over areas for detailed breakdown*")
+#st.markdown("### 🗺️ Interactive Togo Population Explorer")
+
 
 # Load and process data
 @st.cache_data
@@ -209,162 +209,101 @@ if gdf is not None and len(prefecture_valid) > 0:
     # Main content
     if len(filtered_gdf) > 0:
         
-        col1, col2 = st.columns([3, 1])
+        # Full-width map (removed the column layout)
+        st.markdown(f"### 🗺️ {map_title}")
         
-        with col1:
-            st.markdown(f"### 🗺️ {map_title}")
-            
-            # Calculate map bounds for filtered data
-            bounds = filtered_gdf.total_bounds
-            min_lon, min_lat, max_lon, max_lat = bounds
-            center_lat = (min_lat + max_lat) / 2
-            center_lon = (min_lon + max_lon) / 2
-            
-            # Calculate dynamic zoom based on area
-            lat_diff = max_lat - min_lat
-            lon_diff = max_lon - min_lon
-            max_diff = max(lat_diff, lon_diff)
-            
-            if max_diff > 2:
-                zoom_level = 7
-            elif max_diff > 1:
-                zoom_level = 8
-            elif max_diff > 0.5:
-                zoom_level = 9
-            elif max_diff > 0.2:
-                zoom_level = 10
-            else:
-                zoom_level = 11
-            
-            # Create map
-            m = folium.Map(
-                location=[center_lat, center_lon],
-                zoom_start=zoom_level,
-                tiles='OpenStreetMap'
+        # Calculate map bounds for filtered data
+        bounds = filtered_gdf.total_bounds
+        min_lon, min_lat, max_lon, max_lat = bounds
+        center_lat = (min_lat + max_lat) / 2
+        center_lon = (min_lon + max_lon) / 2
+        
+        # Calculate dynamic zoom based on area
+        lat_diff = max_lat - min_lat
+        lon_diff = max_lon - min_lon
+        max_diff = max(lat_diff, lon_diff)
+        
+        if max_diff > 2:
+            zoom_level = 7
+        elif max_diff > 1:
+            zoom_level = 8
+        elif max_diff > 0.5:
+            zoom_level = 9
+        elif max_diff > 0.2:
+            zoom_level = 10
+        else:
+            zoom_level = 11
+        
+        # Create map
+        m = folium.Map(
+            location=[center_lat, center_lon],
+            zoom_start=zoom_level,
+            tiles='OpenStreetMap'
+        )
+        
+        # Fit to filtered data bounds
+        padding = 0.01 if len(filtered_gdf) <= 5 else 0.02
+        southwest = [min_lat - padding, min_lon - padding]
+        northeast = [max_lat + padding, max_lon + padding]
+        m.fit_bounds([southwest, northeast])
+        
+        # Add choropleth
+        folium.Choropleth(
+            geo_data=filtered_gdf,
+            data=filtered_gdf,
+            columns=['prefecture', 'Ensemble'],
+            key_on='feature.properties.prefecture',
+            fill_color='YlOrRd',
+            fill_opacity=0.8,
+            line_opacity=1.0,
+            line_color='darkblue',
+            line_weight=3,
+            legend_name='Total Population'
+        ).add_to(m)
+        
+        # Add interactive tooltips
+        folium.GeoJson(
+            filtered_gdf,
+            style_function=lambda x: {
+                'fillColor': 'transparent',
+                'color': 'darkblue',
+                'weight': 3,
+                'fillOpacity': 0
+            },
+            tooltip=folium.GeoJsonTooltip(
+                fields=['prefecture', 'Region', 'Ensemble', 'Masculin', 'Feminin'],
+                aliases=['Prefecture:', 'Region:', 'Total:', 'Male:', 'Female:'],
+                localize=True,
+                sticky=False,
+                labels=True,
+                style="""
+                    background-color: #f0f0f0;
+                    border: 3px solid darkblue;
+                    border-radius: 8px;
+                    font-family: Arial, sans-serif;
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #333;
+                    padding: 12px;
+                """,
+                max_width=400
+            ),
+            popup=folium.GeoJsonPopup(
+                fields=['prefecture', 'Region', 'Ensemble', 'Masculin', 'Feminin'],
+                aliases=['Prefecture:', 'Region:', 'Total:', 'Male:', 'Female:'],
+                localize=True,
+                labels=True,
+                style="background-color: yellow; color: black; font-weight: bold; font-size: 16px; padding: 10px;"
             )
-            
-            # Fit to filtered data bounds
-            padding = 0.01 if len(filtered_gdf) <= 5 else 0.02
-            southwest = [min_lat - padding, min_lon - padding]
-            northeast = [max_lat + padding, max_lon + padding]
-            m.fit_bounds([southwest, northeast])
-            
-            # Add choropleth
-            folium.Choropleth(
-                geo_data=filtered_gdf,
-                data=filtered_gdf,
-                columns=['prefecture', 'Ensemble'],
-                key_on='feature.properties.prefecture',
-                fill_color='YlOrRd',
-                fill_opacity=0.8,
-                line_opacity=1.0,
-                line_color='darkblue',
-                line_weight=3,
-                legend_name='Total Population'
-            ).add_to(m)
-            
-            # Add interactive tooltips
-            folium.GeoJson(
-                filtered_gdf,
-                style_function=lambda x: {
-                    'fillColor': 'transparent',
-                    'color': 'darkblue',
-                    'weight': 3,
-                    'fillOpacity': 0
-                },
-                tooltip=folium.GeoJsonTooltip(
-                    fields=['prefecture', 'Region', 'Ensemble', 'Masculin', 'Feminin'],
-                    aliases=['Prefecture:', 'Region:', 'Total:', 'Male:', 'Female:'],
-                    localize=True,
-                    sticky=False,
-                    labels=True,
-                    style="""
-                        background-color: #f0f0f0;
-                        border: 3px solid darkblue;
-                        border-radius: 8px;
-                        font-family: Arial, sans-serif;
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #333;
-                        padding: 12px;
-                    """,
-                    max_width=400
-                ),
-                popup=folium.GeoJsonPopup(
-                    fields=['prefecture', 'Region', 'Ensemble', 'Masculin', 'Feminin'],
-                    aliases=['Prefecture:', 'Region:', 'Total:', 'Male:', 'Female:'],
-                    localize=True,
-                    labels=True,
-                    style="background-color: yellow; color: black; font-weight: bold; font-size: 16px; padding: 10px;"
-                )
-            ).add_to(m)
-            
-            # Display map
-            map_data = st_folium(m, width=900, height=600)
-            
-        with col2:
-            st.markdown("### 📊 Summary Statistics")
-            
-            # Current selection stats
-            if len(filtered_gdf) > 0:
-                total_pop = filtered_gdf['Ensemble'].sum()
-                male_pop = filtered_gdf['Masculin'].sum()
-                female_pop = filtered_gdf['Feminin'].sum()
-                
-                st.metric("Prefectures Shown", len(filtered_gdf))
-                st.metric("Total Population", f"{total_pop:,}")
-                st.metric("Male Population", f"{male_pop:,}")
-                st.metric("Female Population", f"{female_pop:,}")
-                
-                gender_ratio = (male_pop / female_pop * 100) if female_pop > 0 else 0
-                st.metric("Gender Ratio", f"{gender_ratio:.1f} M/100F")
-                
-                # Show individual prefecture details if single prefecture selected
-                if 'filter_option' in locals() and filter_option == "Single Prefecture" and len(filtered_gdf) == 1:
-                    st.markdown("---")
-                    st.markdown("#### 🏛️ Prefecture Details")
-                    pref_row = filtered_gdf.iloc[0]
-                    
-                    st.write(f"**Prefecture:** {pref_row['prefecture']}")
-                    st.write(f"**Region:** {pref_row['Region']}")
-                    
-                    # Calculate rank within region or all
-                    if selected_region != 'All Regions':
-                        rank_data = filtered_gdf_region
-                        rank_context = f"in {selected_region}"
-                    else:
-                        rank_data = prefecture_valid
-                        rank_context = "nationally"
-                    
-                    rank = (rank_data['Ensemble'] > pref_row['Ensemble']).sum() + 1
-                    st.write(f"**Rank:** #{rank} of {len(rank_data)} {rank_context}")
-                    
-                    # Calculate percentile
-                    percentile = ((rank_data['Ensemble'] <= pref_row['Ensemble']).sum() / len(rank_data)) * 100
-                    st.write(f"**Percentile:** {percentile:.1f}%")
-                
-                # Regional comparison if specific region selected
-                if selected_region != 'All Regions' and len(regional_totals) > 0:
-                    st.markdown("---")
-                    st.markdown("#### 📋 Regional Validation")
-                    
-                    region_official = regional_totals[regional_totals['Region'] == selected_region]
-                    if len(region_official) > 0:
-                        official = region_official.iloc[0]
-                        
-                        st.write("**Official Regional Total:**")
-                        st.write(f"📊 {official['Ensemble']:,.0f}")
-                        
-                        # Use region total, not filtered total
-                        region_calc_total = filtered_gdf_region['Ensemble'].sum()
-                        st.write("**Sum of Prefectures:**")
-                        st.write(f"📊 {region_calc_total:,.0f}")
-                        
-                        diff = abs(region_calc_total - official['Ensemble']) if pd.notna(official['Ensemble']) else 0
-                        if diff == 0:
-                            st.success("✅ Data consistent!")
-                        else:
-                            st.warning(f"⚠️ Difference: {diff:,.0f}")
+        ).add_to(m)
+        
+        # Display map with increased size and full width
+        map_data = st_folium(
+            m, 
+            width=1400, 
+            height=800, 
+            use_container_width=True
+        )
         
         # Calculate regional statistics from prefecture data
         regional_calc = prefecture_valid.groupby('Region').agg({

@@ -47,5 +47,7 @@ Create a `.env` file in the project root:
 
 #### Common issues:
 
-1. **Cold Cluster Startup:**  
+1. Cold Cluster Startup:
    The first data load may take up to 5 minutes if the data cluster is cold. Please allow extra time on startup.
+
+2. Contact abahamyirou@gmail.com for other issues.
